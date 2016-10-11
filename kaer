@@ -1,0 +1,97 @@
+#!/Library/Frameworks/Python.framework/Versions/2.7/bin/python
+
+import argparse
+import subprocess
+from splunk_deployment import SplunkDeployment
+from retriever import Retriever
+from common import *
+
+# commands:
+# splunk:
+#    list:
+#    - installed apps
+#    - web port
+#    - running splunk 
+#    
+#    stop all splunk
+#
+#    update:
+#    - {splunk-name} APP {app-name}
+#    - {splunk-name} TA  {ta-name}
+#
+# repo:
+#    latest:
+#    - APP {app-name} [download]
+#    - TA  {ta-name}  [download]
+
+def list_handler(args):
+    func = ' '.join(args)
+    if func == 'installed app':
+        splunk_deployments.list_installed_app()
+    elif func == 'web port':
+        splunk_deployments.list_web_port()
+    elif func == 'running splunk':
+        splunk_deployments.list_running_splunk()
+    else:
+        parser.error('arg "list %s" not supported' % func)
+
+def stop_handler(args):
+    func = ' '.join(args)
+    if func == 'all splunk':
+        splunk_deployments.stop_all_splunk()
+    else:
+        parser.error('arg "stop %s" not supported' % func)
+
+def update_handler(args):
+    splunk_name = args[0]
+    splunk_path = config['splunk_path']
+    splunk_dir = join(splunk_path, splunk_name)
+    if not is_splunk_dir(splunk_dir):
+        print splunk_name + ' does not exist'
+        exit()
+
+    retriever = Retriever(category=args[1], name=args[2])
+    print 'latest: ' + retriever.get_latest_pkg_name() + ' ' + retriever.get_latest_pkg_date()
+    pkg_path = retriever.download_latest_pkg()
+    print 'installing'
+    p = subprocess.Popen([join(splunk_dir,'bin/splunk'), 'install', 'app', pkg_path, '-update', '1'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p.wait()
+    out, err = p.communicate()
+    if err != "":
+        print err
+        return
+
+    if len(args) >= 4 and args[3] == 'restart': # restart splunk
+        subprocess.call([join(splunk_dir, 'bin/splunk'), 'restart'])
+
+
+def latest_handler(args):
+    retriever = Retriever(category=args[0], name=args[1])
+    print retriever.get_latest_pkg_name() + ' ' + retriever.get_latest_pkg_date()
+    if len(args) == 3 and args[2] == 'download':
+        pkg_path = retriever.download_latest_pkg()
+        print 'package has been downloaded to ' + pkg_path
+
+
+if __name__ == '__main__':
+    splunk_deployments = SplunkDeployment()
+
+    parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-list', nargs='+', help='supported args: installed apps| web port| running splunk')
+    group.add_argument('-stop', nargs='+', help='supported args: all splunk')
+    group.add_argument('-update', nargs='+', help = 'required args: {splunk-name}, APP|TA, {app-name|ta-name}')
+    group.add_argument('-latest', nargs='+', help='required args: APP|TA, {name}, [download]')
+    args = parser.parse_args()
+
+    if args.list:
+        list_handler(args.list)
+    elif args.stop:
+        stop_handler(args.stop)
+    elif args.update:
+        update_handler(args.update)
+    elif args.latest:
+        latest_handler(args.latest)
+    else:
+        parser.error('arg %s not supported' % args)
+        
