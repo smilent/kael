@@ -1,8 +1,8 @@
-import kaer
+import kael
 
-class TestKaer(object):
+class TestKael(object):
     def setup(self):
-        self.sd = kaer.SplunkDeployment()
+        self.sd = kael.SplunkDeployment()
 
     def test_list_installed_app(self):
         self.sd.list_installed_app()
