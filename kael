@@ -6,51 +6,41 @@ from splunk_deployment import SplunkDeployment
 from retriever import Retriever
 from common import *
 
-# commands:
-# splunk:
-#    list:
-#    - installed apps
-#    - web port
-#    - running splunk 
-#    
-#    stop all splunk
-#
-#    update:
-#    - {splunk-name} APP {app-name}
-#    - {splunk-name} TA  {ta-name}
-#
-# repo:
-#    latest:
-#    - APP {app-name} [download]
-#    - TA  {ta-name}  [download]
-
 def list_handler(args):
-    func = ' '.join(args)
-    if func == 'installed app':
+    if args['installed_app']:
         splunk_deployments.list_installed_app()
-    elif func == 'web port':
+    elif args['web_port']:
         splunk_deployments.list_web_port()
-    elif func == 'running splunk':
+    elif args['running_splunk']:
         splunk_deployments.list_running_splunk()
     else:
         parser.error('arg "list %s" not supported' % func)
 
 def stop_handler(args):
-    func = ' '.join(args)
-    if func == 'all splunk':
+    if args['all']:
         splunk_deployments.stop_all_splunk()
     else:
         parser.error('arg "stop %s" not supported' % func)
 
 def update_handler(args):
-    splunk_name = args[0]
+    splunk_name = args['splunk']
     splunk_path = config['splunk_path']
     splunk_dir = join(splunk_path, splunk_name)
     if not is_splunk_dir(splunk_dir):
         print splunk_name + ' does not exist'
         exit()
 
-    retriever = Retriever(category=args[1], name=args[2])
+    if args['app']:
+        category = 'APP'
+        name = 'app-' + args['app']
+    elif args['ta']:
+        category = 'TA'
+        name = 'ta-' + args['ta']
+    else:
+        print 'Error: either -app or -ta must be specified'
+        exit()
+
+    retriever = Retriever(category=category, name=name)
     print 'latest: ' + retriever.get_latest_pkg_name() + ' ' + retriever.get_latest_pkg_date()
     pkg_path = retriever.download_latest_pkg()
     print 'installing'
@@ -61,12 +51,22 @@ def update_handler(args):
         print err
         return
 
-    if len(args) >= 4 and args[3] == 'restart': # restart splunk
+    if args['restart']: # restart splunk
         subprocess.call([join(splunk_dir, 'bin/splunk'), 'restart'])
 
 
 def latest_handler(args):
-    retriever = Retriever(category=args[0], name=args[1])
+    if args['app']:
+        category = 'APP'
+        name = 'app-' + args['app']
+    elif args['ta']:
+        category = 'TA'
+        name = 'ta-' + args['ta']
+    else:
+        print 'Error: either -app or -ta must be specified'
+        exit()
+
+    retriever = Retriever(category=category, name=name)
     print retriever.get_latest_pkg_name() + ' ' + retriever.get_latest_pkg_date()
     if len(args) == 3 and args[2] == 'download':
         pkg_path = retriever.download_latest_pkg()
@@ -77,21 +77,44 @@ if __name__ == '__main__':
     splunk_deployments = SplunkDeployment()
 
     parser = argparse.ArgumentParser()
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument('-list', nargs='+', help='supported args: installed apps| web port| running splunk')
-    group.add_argument('-stop', nargs='+', help='supported args: all splunk')
-    group.add_argument('-update', nargs='+', help = 'required args: {splunk-name}, APP|TA, {app-name|ta-name}')
-    group.add_argument('-latest', nargs='+', help='required args: APP|TA, {name}, [download]')
-    args = parser.parse_args()
-
-    if args.list:
-        list_handler(args.list)
-    elif args.stop:
-        stop_handler(args.stop)
-    elif args.update:
-        update_handler(args.update)
-    elif args.latest:
-        latest_handler(args.latest)
-    else:
-        parser.error('arg %s not supported' % args)
         
+    command = None
+    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+
+    # create parser for the "latest" command
+    parser_latest = subparsers.add_parser('latest', help='Get latest')
+    latest_group = parser_latest.add_mutually_exclusive_group()
+    latest_group.add_argument('-app', help='retrieve latest app "APP"')
+    latest_group.add_argument('-ta', help='retrieve latest ta "TA"')
+    parser_latest.add_argument('-d', '--download', action='store_true', help='if set, download the latest app or ta')
+
+    # create parser for the "list" command
+    parser_list = subparsers.add_parser('list', help='List info of all splunk instances')
+    list_group = parser_list.add_mutually_exclusive_group()
+    list_group.add_argument('-wp', '--web-port', action='store_true', help='list web port of all splunk instances')
+    list_group.add_argument('-rs', '--running-splunk', action='store_true', help='list all running splunk instances')
+    list_group.add_argument('-ia', '--installed-app', action='store_true', help='list installed apps of all splunk instances')
+
+    # create parser for the "stop" command
+    parser_stop = subparsers.add_parser('stop', help='Stop splunk instances')
+    parser_stop.add_argument('-a', '--all', action='store_true', help='stop all splunk instances')
+
+    # create parser for the "update" command
+    parser_update = subparsers.add_parser('update', help='Update app or ta')
+    parser_update.add_argument('splunk', help='the splunk instance')
+    update_group = parser_update.add_mutually_exclusive_group()
+    update_group.add_argument('-app', help='specify the app "APP" to update')
+    update_group.add_argument('-ta', help='specify the ta "TA" to update')
+    parser_update.add_argument('-r', '--restart', action='store_true', help='restart the splunk instance')
+    
+
+    args = vars(parser.parse_args())
+    if args['command'] == 'latest':
+        latest_handler(args)
+    elif args['command'] == 'list':
+        list_handler(args)
+    elif args['command'] == 'stop':
+        stop_handler(args)
+    elif args['command'] == 'update':
+        update_handler(args)
+
