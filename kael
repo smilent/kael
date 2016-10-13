@@ -76,7 +76,7 @@ if __name__ == '__main__':
     latest_group = parser_latest.add_mutually_exclusive_group()
     latest_group.add_argument('-app', help='retrieve latest app "APP"')
     latest_group.add_argument('-ta', help='retrieve latest ta "TA"')
-    parser_latest.add_argument('-download', action='store_true', help='if set, download the latest app or ta')
+    parser_latest.add_argument('-d', '--download', action='store_true', help='if set, download the latest app or ta')
 
     # create parser for the "list" command
     parser_list = subparsers.add_parser('list', help='List info of all splunk instances')
