@@ -17,8 +17,7 @@ def list_handler(args):
         parser.error('arg "list %s" not supported' % func)
 
 def stop_handler(args):
-    func = ' '.join(args)
-    if func == 'all splunk':
+    if args['all']:
         splunk_deployments.stop_all_splunk()
     else:
         parser.error('arg "stop %s" not supported' % func)
@@ -86,9 +85,15 @@ if __name__ == '__main__':
     list_group.add_argument('-rs', '--running-splunk', action='store_true', help='list all running splunk instances')
     list_group.add_argument('-ia', '--installed-app', action='store_true', help='list installed apps of all splunk instances')
 
+    # create parser for the "stop" command
+    parser_stop = subparsers.add_parser('stop', help='Stop splunk instances')
+    parser_stop.add_argument('-a', '--all', action='store_true', help='stop all splunk instances')
+
     args = vars(parser.parse_args())
     if args['command'] == 'latest':
         latest_handler(args)
     elif args['command'] == 'list':
         list_handler(args)
+    elif args['command'] == 'stop':
+        stop_handler(args)
 
