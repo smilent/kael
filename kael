@@ -66,7 +66,17 @@ def update_handler(args):
 
 
 def latest_handler(args):
-    retriever = Retriever(category=args[0], name=args[1])
+    if args['app']:
+        category = 'APP'
+        name = 'app-' + args['app']
+    elif args['ta']:
+        category = 'TA'
+        name = 'ta-' + args['ta']
+    else:
+        print 'Error: either -app or -ta must be specified'
+        exit()
+
+    retriever = Retriever(category=category, name=name)
     print retriever.get_latest_pkg_name() + ' ' + retriever.get_latest_pkg_date()
     if len(args) == 3 and args[2] == 'download':
         pkg_path = retriever.download_latest_pkg()
@@ -77,21 +87,36 @@ if __name__ == '__main__':
     splunk_deployments = SplunkDeployment()
 
     parser = argparse.ArgumentParser()
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument('-list', nargs='+', help='supported args: installed apps| web port| running splunk')
-    group.add_argument('-stop', nargs='+', help='supported args: all splunk')
-    group.add_argument('-update', nargs='+', help = 'required args: {splunk-name}, APP|TA, {app-name|ta-name}')
-    group.add_argument('-latest', nargs='+', help='required args: APP|TA, {name}, [download]')
-    args = parser.parse_args()
-
-    if args.list:
-        list_handler(args.list)
-    elif args.stop:
-        stop_handler(args.stop)
-    elif args.update:
-        update_handler(args.update)
-    elif args.latest:
-        latest_handler(args.latest)
-    else:
-        parser.error('arg %s not supported' % args)
+    #group = parser.add_mutually_exclusive_group()
+    #group.add_argument('-list', nargs='+', help='supported args: installed apps| web port| running splunk')
+    #group.add_argument('-stop', nargs='+', help='supported args: all splunk')
+    #group.add_argument('-update', nargs='+', help = 'required args: {splunk-name}, APP|TA, {app-name|ta-name}')
+    #group.add_argument('-latest', nargs='+', help='required args: APP|TA, {name}, [download]')
+    #args = parser.parse_args()
+    #if args.list:
+    #    list_handler(args.list)
+    #elif args.stop:
+    #    stop_handler(args.stop)
+    #elif args.update:
+    #    update_handler(args.update)
+    #elif args.latest:
+    #    print 'latest'
+    #    #latest_handler(args.latest)
+    #else:
+    #    parser.error('arg %s not supported' % args)
         
+    command = None
+    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+
+    # create parser for the "latest" command
+    parser_latest = subparsers.add_parser('latest', help='Get latest')
+    latest_group = parser_latest.add_mutually_exclusive_group()
+    latest_group.add_argument('-app', help='retrieve latest app "APP"')
+    latest_group.add_argument('-ta', help='retrieve latest ta "TA"')
+    parser_latest.add_argument('-download', action='store_true', help='if set, download the latest app or ta')
+
+    args = vars(parser.parse_args())
+    if args['command'] == 'latest':
+        latest_handler(args)
+
+
