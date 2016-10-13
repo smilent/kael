@@ -23,14 +23,24 @@ def stop_handler(args):
         parser.error('arg "stop %s" not supported' % func)
 
 def update_handler(args):
-    splunk_name = args[0]
+    splunk_name = args['splunk']
     splunk_path = config['splunk_path']
     splunk_dir = join(splunk_path, splunk_name)
     if not is_splunk_dir(splunk_dir):
         print splunk_name + ' does not exist'
         exit()
 
-    retriever = Retriever(category=args[1], name=args[2])
+    if args['app']:
+        category = 'APP'
+        name = 'app-' + args['app']
+    elif args['ta']:
+        category = 'TA'
+        name = 'ta-' + args['ta']
+    else:
+        print 'Error: either -app or -ta must be specified'
+        exit()
+
+    retriever = Retriever(category=category, name=name)
     print 'latest: ' + retriever.get_latest_pkg_name() + ' ' + retriever.get_latest_pkg_date()
     pkg_path = retriever.download_latest_pkg()
     print 'installing'
@@ -41,7 +51,7 @@ def update_handler(args):
         print err
         return
 
-    if len(args) >= 4 and args[3] == 'restart': # restart splunk
+    if args['restart']: # restart splunk
         subprocess.call([join(splunk_dir, 'bin/splunk'), 'restart'])
 
 
@@ -89,6 +99,15 @@ if __name__ == '__main__':
     parser_stop = subparsers.add_parser('stop', help='Stop splunk instances')
     parser_stop.add_argument('-a', '--all', action='store_true', help='stop all splunk instances')
 
+    # create parser for the "update" command
+    parser_update = subparsers.add_parser('update', help='Update app or ta')
+    parser_update.add_argument('splunk', help='the splunk instance')
+    update_group = parser_update.add_mutually_exclusive_group()
+    update_group.add_argument('-app', help='specify the app "APP" to update')
+    update_group.add_argument('-ta', help='specify the ta "TA" to update')
+    parser_update.add_argument('-r', '--restart', action='store_true', help='restart the splunk instance')
+    
+
     args = vars(parser.parse_args())
     if args['command'] == 'latest':
         latest_handler(args)
@@ -96,4 +115,6 @@ if __name__ == '__main__':
         list_handler(args)
     elif args['command'] == 'stop':
         stop_handler(args)
+    elif args['command'] == 'update':
+        update_handler(args)
 
