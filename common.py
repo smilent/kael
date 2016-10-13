@@ -4,21 +4,34 @@ from os.path import isdir
 from os.path import isfile
 from os.path import join
 
-CONFIG_FILE = join(os.path.dirname(os.path.abspath(__file__)),'config.conf')
+DEFAULT_CONFIG_FILE = join(os.path.dirname(os.path.abspath(__file__)), 'default.conf')
+LOCAL_CONFIG_FILE = join(os.path.dirname(os.path.abspath(__file__)), 'local.conf')
 
 class Config(object):
     class _Config:
         def __init__(self):
             self.config = {}
-            self._load_config(CONFIG_FILE)
+            self._load_config()
 
-        def _load_config(self,config_file):
-            with open(config_file, 'r') as infile:
-                for config in infile:
-                    if '=' not in config:
-                        continue
-                    key, value = string.split(config, '=')
-                    self.config[string.strip(key)] = string.strip(value)
+        def _load_config(self):
+            # load default config
+            if os.path.exists(DEFAULT_CONFIG_FILE):
+                with open(DEFAULT_CONFIG_FILE, 'r') as infile:
+                    for config in infile:
+                        if '=' not in config:
+                            continue
+                        key, value = string.split(config, '=')
+                        self.config[string.strip(key)] = string.strip(value)
+
+            # load local config and overwrite default config if a key already existed
+            if os.path.exists(LOCAL_CONFIG_FILE):
+                with open(LOCAL_CONFIG_FILE, 'r') as infile:
+                    for config in infile:
+                        if '=' not in config:
+                            continue
+                        key, value = string.split(config, '=')
+                        self.config[string.strip(key)] = string.strip(value)
+
 
         def get_config(self):
             return self.config
