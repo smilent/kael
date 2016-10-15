@@ -1,3 +1,7 @@
+__author__ = 'Jarvis'
+
+# this moduler checks splunk deployment environment and wrap splunk cli commands
+
 import os
 import subprocess
 from os.path import isdir
@@ -5,6 +9,8 @@ from os.path import isfile
 from os.path import join
 
 from common import *
+
+config = Config().get_config()
 
 class SplunkDeployment(object):
     class _SplunkDeployment:

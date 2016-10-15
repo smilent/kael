@@ -1,10 +1,15 @@
 #!/Library/Frameworks/Python.framework/Versions/2.7/bin/python
 
+__author__ = 'Jarvis'
+
+import logging
+logging.basicConfig(level=logging.WARNING, filename='kael.log', format='%(asctime)s %(levelname)s %(filename)s %(message)s')
+
 import argparse
 import subprocess
-from splunk_deployment import SplunkDeployment
-from retriever import Retriever
-from common import *
+
+
+#logging.basicConfig(filename='kael.log', level=logging.INFO)
 
 def list_handler(args):
     if args['installed_app']:
@@ -14,7 +19,7 @@ def list_handler(args):
     elif args['running_splunk']:
         splunk_deployments.list_running_splunk()
     else:
-        parser.error('arg "list %s" not supported' % func)
+        logger.warning('arg "list %s" not supported' % func)
 
 def stop_handler(args):
     if args['all']:
@@ -30,15 +35,7 @@ def update_handler(args):
         print splunk_name + ' does not exist'
         exit()
 
-    if args['app']:
-        category = 'APP'
-        name = 'app-' + args['app']
-    elif args['ta']:
-        category = 'TA'
-        name = 'ta-' + args['ta']
-    else:
-        print 'Error: either -app or -ta must be specified'
-        exit()
+    category, name = _category_name_match(args)
 
     retriever = Retriever(category=category, name=name)
     print 'latest: ' + retriever.get_latest_pkg_name() + ' ' + retriever.get_latest_pkg_date()
@@ -49,6 +46,7 @@ def update_handler(args):
     out, err = p.communicate()
     if err != "":
         print err
+        logger.error('error in updating {category} {name}.\n Error msg: {err}'.format(category=category, name=name, err=err))
         return
 
     if args['restart']: # restart splunk
@@ -56,15 +54,7 @@ def update_handler(args):
 
 
 def latest_handler(args):
-    if args['app']:
-        category = 'APP'
-        name = 'app-' + args['app']
-    elif args['ta']:
-        category = 'TA'
-        name = 'ta-' + args['ta']
-    else:
-        print 'Error: either -app or -ta must be specified'
-        exit()
+    category, name = _category_name_match(args)
 
     retriever = Retriever(category=category, name=name)
     print retriever.get_latest_pkg_name() + ' ' + retriever.get_latest_pkg_date()
@@ -73,11 +63,27 @@ def latest_handler(args):
         print 'package has been downloaded to ' + pkg_path
 
 
+def _category_name_match(args):
+    if args['app']:
+        category = 'APP'
+        name = 'app-' + args['app']
+    elif args['ta']:
+        category = 'TA'
+        name = 'ta-' + args['ta']
+    else:
+        print 'Error" either -app or ta must be specified'
+        exit()
+
+    return (category, name)
+
+
 if __name__ == '__main__':
-    splunk_deployments = SplunkDeployment()
 
     parser = argparse.ArgumentParser()
-        
+    
+    # loglevel setting
+    parser.add_argument('--log', nargs='?', choices=['debug', 'info', 'warning', 'error', 'critical'], const='warning', default='warning', help='log level')
+
     command = None
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
 
@@ -109,6 +115,20 @@ if __name__ == '__main__':
     
 
     args = vars(parser.parse_args())
+    numeric_level=getattr(logging, args['log'].upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError('Invalid log level: %s' % args['log'])
+
+    logging.getLogger().setLevel(numeric_level)
+    logger = logging.getLogger(__name__)
+
+    from splunk_deployment import SplunkDeployment
+    from retriever import Retriever
+    from common import *
+
+    splunk_deployments = SplunkDeployment()
+    config = Config().get_config()
+
     if args['command'] == 'latest':
         latest_handler(args)
     elif args['command'] == 'list':

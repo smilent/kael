@@ -1,3 +1,7 @@
+__author__ = 'Jarvis'
+
+# this modular retrieve info from repo.splunk.com
+
 import urllib2
 import urllib
 import threading
@@ -6,6 +10,9 @@ import os
 from sys import exit, stdout
 from common import *
 from time import sleep
+
+import logging
+logger = logging.getLogger(__name__)
 
 class Retriever(object):
     def __init__(self, category, name):
@@ -16,13 +23,20 @@ class Retriever(object):
         self.url = self.url_pattern.format(category=self.category, name=self.name)
         self.pkg_pattern = r'<a href="(?P<href>[a-zA-Z0-9_.\-]+.spl)">(?P<name>[a-zA-Z0-9._\-]+)</a>\s+(?P<date>\d{2}-[a-zA-Z]+-\d{4} \d{2}:\d{2})'
 
+        logging.info('consulting {url}'.format(url=self.url))
         html = self._get_web_content(self.url)
+        logging.debug('finish loading {url}'.format(url=self.url))
         self.result = self._parse_pkg_html(html)
-        
 
     def _get_web_content(self, url):
-        response = urllib2.urlopen(url)
-        return response.read()
+        try:
+            response = urllib2.urlopen(url)
+            return response.read()
+        except urllib2.HTTPError as err:
+            print 'can\'t instablish http connection to {url}. Please check your web connection or url.'.format(url=url)
+            logger.error(str(err) + ' ' + url)
+            exit()
+
 
     def _parse_pkg_html(self, html):
         return re.search(self.pkg_pattern, html)
