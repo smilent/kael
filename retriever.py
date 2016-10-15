@@ -14,6 +14,8 @@ from time import sleep
 import logging
 logger = logging.getLogger(__name__)
 
+config = Config().get_config()
+
 class Retriever(object):
     def __init__(self, category, name):
         self.url_pattern = 'https://repo.splunk.com/artifactory/Solutions/{category}/{name}/builds/develop/latest/'
@@ -40,6 +42,7 @@ class Retriever(object):
 
     def _parse_pkg_html(self, html):
         return re.search(self.pkg_pattern, html)
+
 
     def get_latest_pkg_url(self):
         return self.url + self.result.group('href')
@@ -70,17 +73,37 @@ class Retriever(object):
 
         pkg_path = os.path.join(pkg_dir, self.get_latest_pkg_name())
         if os.path.exists(pkg_path):
+            # already downloaded
             pass
         else:
-            t = threading.Thread(name='download', target = lambda : urllib.urlretrieve(self.get_latest_pkg_url(), pkg_path))
-            t.start()
-            stdout.write('downloading ')
-            while t.isAlive():
-                sleep(1)
-                stdout.write('.')
+            try:
+                #t = threading.Thread(name='download', target = lambda : urllib.urlretrieve(self.get_latest_pkg_url(), pkg_path))
+                #t.start()
+                #stdout.write('downloading ')
+                #while t.isAlive():
+                #    sleep(1)
+                #    stdout.write('.')
+                #    stdout.flush()
+                #stdout.flush()
+                fuo = urllib.FancyURLopener()
+                stdout.write('waiting for downloading')
                 stdout.flush()
-            stdout.write('\nfinish\n')
-            stdout.flush()
+                fuo.retrieve(self.get_latest_pkg_url(), pkg_path, _report_hook)
+            except urllib.ContentTooShortError as err:
+                print 'failed to download the whole file. Please check your network connection or make sure there is enough disk space'
+                logger.error('failed to download {url}. \n{err}'.format(url=self.get_latest_pkg_url(), err=str(err)))
 
         return pkg_path
 
+    
+def _report_hook(block_num, block_size, total_size):
+    read_so_far = block_num * block_size
+    if total_size > 0:
+        if read_so_far >= total_size:
+            read_so_far = total_size
+        percent = read_so_far * 100 / total_size
+        progress = '\r%5.1f%% %*d / %d KB' % (percent, len(str(total_size)), read_so_far, total_size)
+        stdout.write(progress)
+        stdout.flush()
+        if read_so_far >= total_size:
+            stdout.write('\n')
