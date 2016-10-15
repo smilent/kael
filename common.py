@@ -1,8 +1,16 @@
+__author__ = 'Jarvis'
+
+# this modular wraps some common function and class
+
 import string
 import os
 from os.path import isdir
 from os.path import isfile
 from os.path import join
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_CONFIG_FILE = join(os.path.dirname(os.path.abspath(__file__)), 'default.conf')
 LOCAL_CONFIG_FILE = join(os.path.dirname(os.path.abspath(__file__)), 'local.conf')
@@ -41,10 +49,9 @@ class Config(object):
     def __new__(cls):
         if not Config.instance:
             Config.instance = Config._Config()
+            logging.info('create Config instance')
+            logging.debug('config: ' + str(Config.instance.get_config()))
         return Config.instance
-
-
-config = Config().get_config()
 
 def is_splunk_dir(path):
     return isdir(path) and isdir(join(path, 'bin')) and isfile(join(path, 'bin/splunk'))
