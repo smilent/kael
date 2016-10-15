@@ -58,7 +58,7 @@ def latest_handler(args):
 
     retriever = Retriever(category=category, name=name)
     print retriever.get_latest_pkg_name() + ' ' + retriever.get_latest_pkg_date()
-    if len(args) == 3 and args[2] == 'download':
+    if args['download']:
         pkg_path = retriever.download_latest_pkg()
         print 'package has been downloaded to ' + pkg_path
 
@@ -121,6 +121,7 @@ if __name__ == '__main__':
 
     logging.getLogger().setLevel(numeric_level)
     logger = logging.getLogger(__name__)
+    logger.debug('command line args: ' + str(args))
 
     from splunk_deployment import SplunkDeployment
     from retriever import Retriever

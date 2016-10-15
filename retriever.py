@@ -14,6 +14,8 @@ from time import sleep
 import logging
 logger = logging.getLogger(__name__)
 
+config = Config().get_config()
+
 class Retriever(object):
     def __init__(self, category, name):
         self.url_pattern = 'https://repo.splunk.com/artifactory/Solutions/{category}/{name}/builds/develop/latest/'
