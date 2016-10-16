@@ -1,4 +1,3 @@
-import kael
 
 class TestKael(object):
     def setup(self):
