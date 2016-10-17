@@ -44,6 +44,7 @@ def update_handler(args):
         return
 
     if args['restart']: # restart splunk
+        print 'restarting'
         splunk.run_command(['restart'])
 
 
@@ -65,7 +66,7 @@ def _category_name_match(args):
         category = 'TA'
         name = 'ta-' + args['ta']
     else:
-        print 'Error" either -app or ta must be specified'
+        print 'Error: either -app or -ta must be specified'
         exit()
 
     return (category, name)
@@ -106,7 +107,12 @@ if __name__ == '__main__':
     update_group.add_argument('-app', help='specify the app "APP" to update')
     update_group.add_argument('-ta', help='specify the ta "TA" to update')
     parser_update.add_argument('-r', '--restart', action='store_true', help='restart the splunk instance')
-    
+
+    # create parser for the "tsearch" command
+    parser_tsearch = subparsers.add_parser('tsearch', help='Trigger saved search')
+    parser_tsearch.add_argument('splunk', help='the splunk instance')
+    parser_tsearch.add_argument('namespace', help='the app namespace where the saved searches belong to')
+
 
     args = vars(parser.parse_args())
     numeric_level=getattr(logging, args['log'].upper(), None)
@@ -132,4 +138,9 @@ if __name__ == '__main__':
         stop_handler(args)
     elif args['command'] == 'update':
         update_handler(args)
+    elif args['command'] == 'tsearch':
+        tsearch_handler(args)
+    else:
+        print args['command'] + 'is not supported'
+
 
