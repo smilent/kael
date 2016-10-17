@@ -62,6 +62,10 @@ def info_handler(args):
     info.info(args)
 
 
+def fork_handler(args):
+    fork.fork(args)
+
+
 def _category_name_match(args):
     if args['app']:
         category = 'APP'
@@ -122,6 +126,11 @@ if __name__ == '__main__':
     parser_info.add_argument('splunk', help='the splunk instance')
     parser_info.add_argument('-app', help='the app you want to get info of')
 
+    # create parser for the "fork" command
+    parser_fork = subparsers.add_parser('fork', help='Fork a splunk')
+    parser_fork.add_argument('splunk', help='the splunk instance to be forked')
+    parser_fork.add_argument('-start', action='store_true', help='start the original splunk and the forked one')
+
     # create parser for the "tsearch" command
     parser_tsearch = subparsers.add_parser('tsearch', help='Trigger saved search')
     parser_tsearch.add_argument('splunk', help='the splunk instance')
@@ -138,6 +147,7 @@ if __name__ == '__main__':
     logger.debug('command line args: ' + str(args))
 
     import info
+    import fork
     from splunk_deployment import SplunkDeployment
     from retriever import Retriever
     from common import *
@@ -155,6 +165,8 @@ if __name__ == '__main__':
         update_handler(args)
     elif args['command'] == 'info':
         info_handler(args)
+    elif args['command'] == 'fork':
+        fork_handler(args)
     elif args['command'] == 'tsearch':
         tsearch_handler(args)
     else:
