@@ -1,4 +1,3 @@
-from retriever import Retriever
 
 class TestRetriever(object):
     def est_retrieve_app_aws(self):

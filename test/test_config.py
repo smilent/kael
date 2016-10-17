@@ -1,4 +1,3 @@
-from common import *
 
 class TestConfig(object):
     def setup(self):

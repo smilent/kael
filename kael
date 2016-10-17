@@ -3,7 +3,7 @@
 __author__ = 'Jarvis'
 
 import logging
-logging.basicConfig(level=logging.WARNING, filename='kael.log', format='%(asctime)s %(levelname)s %(filename)s %(message)s')
+logging.basicConfig(level=logging.WARNING, filename='kael.log', format='%(asctime)s %(filename)s %(levelname)s %(message)s')
 
 import argparse
 import subprocess
@@ -13,44 +13,39 @@ import subprocess
 
 def list_handler(args):
     if args['installed_app']:
-        splunk_deployments.list_installed_app()
+        splunk_deployment.list_installed_app()
     elif args['web_port']:
-        splunk_deployments.list_web_port()
+        splunk_deployment.list_web_port()
     elif args['running_splunk']:
-        splunk_deployments.list_running_splunk()
+        splunk_deployment.list_running_splunk()
     else:
         logger.warning('arg "list %s" not supported' % func)
 
 def stop_handler(args):
     if args['all']:
-        splunk_deployments.stop_all_splunk()
+        splunk_deployment.stop_all_splunk()
     else:
         parser.error('arg "stop %s" not supported' % func)
 
 def update_handler(args):
     splunk_name = args['splunk']
-    splunk_path = config['splunk_path']
-    splunk_dir = join(splunk_path, splunk_name)
-    if not is_splunk_dir(splunk_dir):
-        print splunk_name + ' does not exist'
-        exit()
+    splunk = splunk_deployment.get_splunk(splunk_name)
 
     category, name = _category_name_match(args)
-
     retriever = Retriever(category=category, name=name)
     print 'latest: ' + retriever.get_latest_pkg_name() + ' ' + retriever.get_latest_pkg_date()
+    
     pkg_path = retriever.download_latest_pkg()
     print 'installing'
-    p = subprocess.Popen([join(splunk_dir,'bin/splunk'), 'install', 'app', pkg_path, '-update', '1'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    p.wait()
-    out, err = p.communicate()
+    out, err = splunk.run_command(['install', 'app', pkg_path, '-update', '1'])
     if err != "":
         print err
         logger.error('error in updating {category} {name}.\n Error msg: {err}'.format(category=category, name=name, err=err))
         return
 
     if args['restart']: # restart splunk
-        subprocess.call([join(splunk_dir, 'bin/splunk'), 'restart'])
+        print 'restarting'
+        splunk.run_command(['restart'])
 
 
 def latest_handler(args):
@@ -71,7 +66,7 @@ def _category_name_match(args):
         category = 'TA'
         name = 'ta-' + args['ta']
     else:
-        print 'Error" either -app or ta must be specified'
+        print 'Error: either -app or -ta must be specified'
         exit()
 
     return (category, name)
@@ -112,7 +107,12 @@ if __name__ == '__main__':
     update_group.add_argument('-app', help='specify the app "APP" to update')
     update_group.add_argument('-ta', help='specify the ta "TA" to update')
     parser_update.add_argument('-r', '--restart', action='store_true', help='restart the splunk instance')
-    
+
+    # create parser for the "tsearch" command
+    parser_tsearch = subparsers.add_parser('tsearch', help='Trigger saved search')
+    parser_tsearch.add_argument('splunk', help='the splunk instance')
+    parser_tsearch.add_argument('namespace', help='the app namespace where the saved searches belong to')
+
 
     args = vars(parser.parse_args())
     numeric_level=getattr(logging, args['log'].upper(), None)
@@ -127,7 +127,7 @@ if __name__ == '__main__':
     from retriever import Retriever
     from common import *
 
-    splunk_deployments = SplunkDeployment()
+    splunk_deployment = SplunkDeployment()
     config = Config().get_config()
 
     if args['command'] == 'latest':
@@ -138,4 +138,9 @@ if __name__ == '__main__':
         stop_handler(args)
     elif args['command'] == 'update':
         update_handler(args)
+    elif args['command'] == 'tsearch':
+        tsearch_handler(args)
+    else:
+        print args['command'] + 'is not supported'
+
 
