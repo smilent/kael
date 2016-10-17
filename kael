@@ -58,6 +58,10 @@ def latest_handler(args):
         print 'package has been downloaded to ' + pkg_path
 
 
+def info_handler(args):
+    info.info(args)
+
+
 def _category_name_match(args):
     if args['app']:
         category = 'APP'
@@ -113,6 +117,11 @@ if __name__ == '__main__':
     update_group.add_argument('-sa', help='specify the sa "SA" to update')
     parser_update.add_argument('-r', '--restart', action='store_true', help='restart the splunk instance')
 
+    # create parser for the "info" command
+    parser_info = subparsers.add_parser('info', help='Get version/build info of splunk/app')
+    parser_info.add_argument('splunk', help='the splunk instance')
+    parser_info.add_argument('-app', help='the app you want to get info of')
+
     # create parser for the "tsearch" command
     parser_tsearch = subparsers.add_parser('tsearch', help='Trigger saved search')
     parser_tsearch.add_argument('splunk', help='the splunk instance')
@@ -128,6 +137,7 @@ if __name__ == '__main__':
     logger = logging.getLogger(__name__)
     logger.debug('command line args: ' + str(args))
 
+    import info
     from splunk_deployment import SplunkDeployment
     from retriever import Retriever
     from common import *
@@ -143,6 +153,8 @@ if __name__ == '__main__':
         stop_handler(args)
     elif args['command'] == 'update':
         update_handler(args)
+    elif args['command'] == 'info':
+        info_handler(args)
     elif args['command'] == 'tsearch':
         tsearch_handler(args)
     else:

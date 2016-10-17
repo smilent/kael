@@ -39,6 +39,8 @@ class Config(object):
                             continue
                         key, value = string.split(config, '=')
                         self.config[string.strip(key)] = string.strip(value)
+	    
+	    logger.debug(self.config)
 
 
         def get_config(self):
