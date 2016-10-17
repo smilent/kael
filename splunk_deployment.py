@@ -29,17 +29,36 @@ class SplunkDeployment(object):
         def run_command(self, command, stdout=subprocess.PIPE, stderr=subprocess.PIPE):
             return SplunkDeployment.instance._run_command(self.name, command, stdout, stderr)
 
+        def is_running(self):
+            out, err = self.run_command(['status'])
+            return 'is running' in out
+
+        def stop(self):
+            out, err = self.run_command(['stop'])
+            return err
+
+        def start(self):
+            out, err = self.run_command(['start'])
+            return err
+
+        def restart(self):
+            out, err = self.run_command(['restart'])
+            return err
+
 
     class _SplunkDeployment:
         def __init__(self):
             self.splunk_deployment_path = config['splunk_deployment_path']
 
             self.splunk_instances = {}
+            self.refresh()
+
+
+        def refresh(self):
             for ele in os.listdir(self.splunk_deployment_path):
                 full_path = join(self.splunk_deployment_path, ele)
-                if is_splunk_dir(full_path):
+                if (str(ele) not in self.splunk_instances.keys()) and is_splunk_dir(full_path):
                     self.splunk_instances[str(ele)] = SplunkDeployment._Splunk(ele, full_path)
-
             logger.info('found splunks: {splunks}'.format(splunks=self.splunk_instances.keys()))
 
         def list_installed_app(self):
@@ -83,6 +102,12 @@ class SplunkDeployment(object):
                 logger.error('splunk {name} does not exist in path {path}'.format(name=name, path=self.splunk_deployment_path))
                 print 'splunk {splunk} does not exist'.format(splunk=name)
                 exit()
+
+        def contains(self, name):
+            return name in self.splunk_instances.keys()
+
+        def get_deployment_path(self):
+            return self.splunk_deployment_path
 
         def _run_command(self, splunk, command, stdout=subprocess.PIPE, stderr=subprocess.PIPE):
             c = [join(self.get_splunk(splunk).get_path(), 'bin/splunk')]
