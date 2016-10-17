@@ -65,8 +65,11 @@ def _category_name_match(args):
     elif args['ta']:
         category = 'TA'
         name = 'ta-' + args['ta']
+    elif args['sa']:
+        category = 'SA'
+        name = 'sa-' + args['sa']
     else:
-        print 'Error: either -app or -ta must be specified'
+        print 'Error: must specify one of app, ta or sa'
         exit()
 
     return (category, name)
@@ -87,6 +90,7 @@ if __name__ == '__main__':
     latest_group = parser_latest.add_mutually_exclusive_group()
     latest_group.add_argument('-app', help='retrieve latest app "APP"')
     latest_group.add_argument('-ta', help='retrieve latest ta "TA"')
+    latest_group.add_argument('-sa', help='retrieve latest sa "SA"')
     parser_latest.add_argument('-d', '--download', action='store_true', help='if set, download the latest app or ta')
 
     # create parser for the "list" command
@@ -106,6 +110,7 @@ if __name__ == '__main__':
     update_group = parser_update.add_mutually_exclusive_group()
     update_group.add_argument('-app', help='specify the app "APP" to update')
     update_group.add_argument('-ta', help='specify the ta "TA" to update')
+    update_group.add_argument('-sa', help='specify the sa "SA" to update')
     parser_update.add_argument('-r', '--restart', action='store_true', help='restart the splunk instance')
 
     # create parser for the "tsearch" command
