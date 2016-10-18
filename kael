@@ -110,7 +110,7 @@ if __name__ == '__main__':
 
     # create parser for the "stop" command
     parser_stop = subparsers.add_parser('stop', help='Stop splunk instances')
-    parser_stop.add_argument('-a', '--all', action='store_true', help='stop all splunk instances')
+    parser_stop.add_argument('-all', action='store_true', help='stop all splunk instances')
 
     # create parser for the "update" command
     parser_update = subparsers.add_parser('update', help='Update app or ta')
