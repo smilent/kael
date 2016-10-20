@@ -36,7 +36,11 @@ class Retriever(object):
             return response.read()
         except urllib2.HTTPError as err:
             print 'can\'t instablish http connection to {url}. Please check your web connection or url.'.format(url=url)
-            logger.error(str(err) + ' ' + url)
+            logger.error('can\'t establish http connection.\n' + str(err))
+            exit()
+        except urllib2.URLError as err:
+            print 'cant\'t connect to {url}. Please check whether repo is down'.format(url=url)
+            logger.error('can\'t connect to {url}.\nstr(err))'.format(url=url))
             exit()
 
 
