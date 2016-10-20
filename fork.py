@@ -3,6 +3,9 @@ from os.path import join, dirname
 import splunk_deployment
 import logging
 import shutil
+import threading
+import time
+from sys import stdout
 
 logger = logging.getLogger(__name__)
 splunk_deployment = splunk_deployment.SplunkDeployment()
@@ -20,8 +23,19 @@ def fork(args):
 
     # copy files
     try:
-        shutil.copytree(splunk.get_path(), 
-                join(dirname(splunk.get_path()), splunk.get_name()+'-forked'))
+        t = threading.Thread(target = lambda: shutil.copytree(splunk.get_path(), 
+            join(dirname(splunk.get_path()), splunk.get_name()+'-forked')))
+
+        t.start()
+        stdout.write('forking')
+        
+        while t.is_alive():
+            stdout.write ('.')
+            stdout.flush()
+            time.sleep(1)
+
+        stdout.write('\n')
+
 
         splunk_deployment.refresh()
 
