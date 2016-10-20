@@ -37,6 +37,10 @@ def update_handler(args):
     
     pkg_path = retriever.download_latest_pkg()
     print 'installing'
+
+    if not splunk.is_running():
+        splunk.start()
+
     out, err = splunk.run_command(['install', 'app', pkg_path, '-update', '1'])
     if err != "":
         print err
