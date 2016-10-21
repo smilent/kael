@@ -44,6 +44,11 @@ def fork(args):
         logger.error(err)
         exit()
 
+    except KeyboardInterrupt:
+        print '\ncan\'t interrupt, please wait for forking to complete'
+        t.join()
+        exit()
+
     # change port
     splunk_forked = splunk_deployment.get_splunk(splunk.get_name()+'-forked')
     splunk_forked.run_command(['set','web-port','8010'])

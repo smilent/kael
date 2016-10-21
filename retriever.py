@@ -81,14 +81,6 @@ class Retriever(object):
             pass
         else:
             try:
-                #t = threading.Thread(name='download', target = lambda : urllib.urlretrieve(self.get_latest_pkg_url(), pkg_path))
-                #t.start()
-                #stdout.write('downloading ')
-                #while t.isAlive():
-                #    sleep(1)
-                #    stdout.write('.')
-                #    stdout.flush()
-                #stdout.flush()
                 fuo = urllib.FancyURLopener()
                 stdout.write('waiting for downloading')
                 stdout.flush()
