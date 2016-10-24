@@ -3,11 +3,13 @@
 __author__ = 'Jarvis'
 
 import logging
-from os.path import join, dirname
-logging.basicConfig(level=logging.WARNING, filename=join(dirname(__file__), 'kael.log'), format='%(asctime)s %(filename)s %(levelname)s %(message)s')
+logging.basicConfig(level=logging.WARNING, filename='kael.log', format='%(asctime)s %(filename)s %(levelname)s %(message)s')
+
 import argparse
 import subprocess
 
+
+#logging.basicConfig(filename='kael.log', level=logging.INFO)
 
 def list_handler(args):
     if args['installed_app']:
