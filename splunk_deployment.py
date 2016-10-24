@@ -112,6 +112,7 @@ class SplunkDeployment(object):
         def _run_command(self, splunk, command, stdout=subprocess.PIPE, stderr=subprocess.PIPE):
             c = [join(self.get_splunk(splunk).get_path(), 'bin/splunk')]
             c.extend(command)
+            c.extend(['-auth', 'admin:changeme'])
             logger.info('running: {command}'.format(command = str(c)))
             p = subprocess.Popen(c, stdout=stdout, stderr=stderr)
             p.wait()
